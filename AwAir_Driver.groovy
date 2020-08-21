@@ -29,7 +29,7 @@ metadata {
     }
 
     preferences {
-        input("ip", "text", title: "IP Address", description: "ip of AwAir", required: true, defaultValue: "http://192.168.4.3" )
+        input("ip", "text", title: "IP Address", description: "ip of AwAir", required: true, defaultValue: "http://192.168.1.3" )
         input("urlPath", "text", title: "Path Address", description: "URL path of AwAir", required: true, defaultValue: "/air-data/latest" )
 
         input name: "pollingInterval", type: "number", title: "Time (seconds) between status checks", defaultValue: 300
