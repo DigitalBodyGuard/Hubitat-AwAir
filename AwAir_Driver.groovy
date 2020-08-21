@@ -2,8 +2,6 @@
 *  Hubitat Driver for AwAir Elements
 *  Licenses CC-0 public domain
 */
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
 
 metadata {
     definition(name: "AwAir", namespace: "awair", author: "Digital_BG", importUrl: "https://raw.githubusercontent.com/DigitalBodyGuard/Hubitat-AwAir/master/AwAir_Driver.groovy") 
@@ -14,13 +12,12 @@ metadata {
         capability "TemperatureMeasurement"
         capability "CarbonDioxideMeasurement"
         capability "RelativeHumidityMeasurement"
-        //    if (isST) {capability "Air Quality Sensor"} else {attribute "airQuality", "number"}
 
         attribute "pm25", "number"
         attribute "temperature", "number"
         attribute "voc", "number"
         attribute "humidity", "string"
-        attribute "airQualityIndex", "number"	
+        attribute "airQuality", "number"	
         attribute "carbonDioxide", "number" 
 
         attribute "alert_aiq", "ENUM", ["bad","good"]
@@ -50,8 +47,8 @@ metadata {
         input name: "vocLevelGood", type: "number", title: "Reset Alert Level voc", defaultValue: 800
 
         input name: "enableAlerts_aiq", type: "bool", title: "Enable Alerts_aiq", defaultValue: true
-        input name: "aiqLevelBad", type: "number", title: "Alert Level low airQualityIndex", defaultValue: 60
-        input name: "aiqLevelGood", type: "number", title: "Reset Alert Level high airQualityIndex", defaultValue: 70
+        input name: "aiqLevelBad", type: "number", title: "Alert Level low airQuality", defaultValue: 60
+        input name: "aiqLevelGood", type: "number", title: "Reset Alert Level high airQuality", defaultValue: 70
 
         /*        input name: "enableAlerts_humidity", type: "bool", title: "Enable Alerts_humidity", defaultValue: true
 input name: "humidityLevelBad", type: "number", title: "Alert Level humidity", defaultValue: 70
@@ -82,16 +79,12 @@ def logsOff() {
 
 def refresh() {
     if (logDebug) log.debug "refreshing"
-
-
-
     fireUpdate("voc",-1,"ppb","voc is ${-1} ppb")
     fireUpdate("pm25",-1,"ug/m3","pm25 is ${-1} ug/m3")
-    fireUpdate("airQualityIndex",-1,"","airQualityIndex is ${-1}")
+    fireUpdate("airQuality",-1,"","airQuality is ${-1}")
     fireUpdate("temperature",-1,"°${location.temperatureScale}","Temperature is ${-1}°${location.temperatureScale}")
     fireUpdate("carbonDioxide",-1,"ppm","carbonDioxide is ${-1} ppm")
     fireUpdate("humidity",-1,"%","humidity is ${-1}")
-
 
     fireUpdate_small("alert_aiq","good")
     fireUpdate_small("alert_voc","good")
@@ -125,13 +118,12 @@ def ReceiveData(response, data) {
     try{
         if (response.getStatus() == 200 || response.getStatus() == 207) {
             if (logDebug) log.debug "start parsing"      
-            //     if (logDebug) log.debug response.data
 
             Json = parseJson( response.data )
 
             fireUpdate("voc",Json.voc,"ppb","voc is ${Json.voc} ppb")
             fireUpdate("pm25",Json.pm25,"ug/m3","pm25 is ${Json.pm25} ug/m3")
-            fireUpdate("airQualityIndex",Json.score,"","airQualityIndex is ${Json.score}")
+            fireUpdate("airQuality",Json.score,"","airQuality is ${Json.score}")
 
             temperature=convertTemperatureIfNeeded(Json.temp,"c",1)
             fireUpdate("temperature",temperature,"°${location.temperatureScale}","Temperature is ${temperature}°${location.temperatureScale}")
@@ -149,6 +141,7 @@ def ReceiveData(response, data) {
                     if(Json.score > aiqLevelGood)
                     fireUpdate_small("alert_aiq","good")
             }
+
             if(enableAlerts_pm25)
             {
                 if(getAttribute("alert_pm25")=="good")
@@ -160,6 +153,7 @@ def ReceiveData(response, data) {
                     if(Json.pm25 < pm2_5LevelGood)
                     fireUpdate_small("alert_pm25","good")
             }
+
             if(enableAlerts_co2)
             {
                 if(getAttribute("alert_co2")=="good")
@@ -171,6 +165,7 @@ def ReceiveData(response, data) {
                     if(Json.co2 < co2LevelGood)
                     fireUpdate_small("alert_co2","good")
             }
+
             if(enableAlerts_voc)
             {
                 if(getAttribute("alert_voc")=="good")
@@ -223,29 +218,28 @@ void fireUpdate(name,value,unit,description)
     ]
     eventProcess(result)   
 }
+
 void fireUpdate_small(name,value)
 {
     result = [
         name: name,
         value: value
-        //	translatable:true
     ]
     eventProcess(result)   
 }
 
 def getAttribute(name)
 {
-    return   device.currentValue(name).toString()
+    return device.currentValue(name).toString()
 }
 
 void eventProcess(Map evt) {
     if (getAttribute(evt.name).toString() != evt.value.toString() ) 
     {
         evt.isStateChange=true
-        //       evt.translatable=true
+        sendEvent(evt)
+
         if (logEnable) log.info device.getName()+" "+evt.descriptionText
         if (logDebug) log.debug "result : "+evt
-
-        sendEvent(evt)
     }
 }
