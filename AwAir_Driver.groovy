@@ -16,7 +16,7 @@ metadata {
         attribute "pm25", "number"
         attribute "temperature", "number"
         attribute "voc", "number"
-        attribute "humidity", "string"
+        attribute "humidity", "number"
         attribute "airQuality", "number"	
         attribute "carbonDioxide", "number" 
 
